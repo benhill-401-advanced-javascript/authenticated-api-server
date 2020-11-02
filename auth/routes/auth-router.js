@@ -1,56 +1,91 @@
 'use strict';
 
+const chalk = require('chalk');
 const express = require('express');
-
-const basicAuth = require('../middleware/basic.js');
-const bearer = require('../middleware/bearer.js');
-const users = require('../models/users-model.js');
-
-// Initialize Express Router
 const router = express.Router();
 
-router.post('/signup', async (req, res, next) => {
+const userModel = require('../models/users-model.js');
+const basicAuth = require('../middleware/basic.js');
+const bearerAuth = require('../middleware/bearer.js');
+const oAuth = require('../middleware/oauth.js');
+const acl = require('../middleware/acl.js');
 
+router.post('/signup', handleSignUp);
+router.post('/signin', basicAuth, handleSignIn);
+router.get('/allUsers', bearerAuth, getAllUsers);
+router.get('/secret', bearerAuth, handleSecret);
+router.get('/article', bearerAuth, acl('update'), userCanUpdate);
+router.get('/article', bearerAuth, acl('create'), userCanCreate);
+router.get('/article', bearerAuth, acl('read'), userCanRead);
+router.get('/oauth', oAuth, handleOauth);
+
+async function handleSignUp(req, res, next) {
   try {
     let obj = {
       username: req.body.username,
-      password: req.body.password
+      password: req.body.password,
+      role: req.body.role,
     }
-
-    // Create a new instance from the schema, using that object
-    let record = new users(obj);
-
-    // Save that instance to the database
+    let record = new userModel(obj);
     let newUser = await record.save();
-
     let token = record.generateToken();
 
-    res.set('auth', req.token);
-    let object = {
-      token: req.token,
-      user: newUser
+    let output = {
+      token: token,
+      user: newUser,
     }
-    res.status(200).json(object);
-
-
+    res.set('auth', token);
+    res.status(200).json(output);
   } catch (e) {
     next(e.message);
   }
+}
 
-});
-
-// adding ,basicAuth does?
-router.post('/signin', basicAuth, (req, res, next) => {
-  res.set('auth', req.token);
-  let object = {
-    token: req.token,
-    user: req.user
+async function handleSignIn(req, res, next) {
+  try {
+    let obj = {
+      token: req.token,
+      user: req.user,
+    }
+    res.set('auth', req.token);
+    res.status(200).json(obj);
+  } catch (e) {
+    next(e);
   }
-  res.status(200).json(object);
-});
+}
 
-router.get('/secret', bearer, (req, res) => {
-  res.status(200).send(`Welcome, ${req.user.username}`)
-})
+async function getAllUsers(req, res, next) {
+  try {
+    let allUsers = await userModel.find({});
+    res.set('auth', req.token);
+    res.status(200).json(allUsers);
+  } catch (e) {
+    next(e);
+  }
+}
+
+function handleSecret(req, res, next) {
+  res.status(200).send(`Valid token ${req.user.username}. Thank you!`);
+}
+
+function userCanUpdate(req, res, next) {
+  res.status(200).send(chalk.greenBright('Authorized to update!'));
+}
+
+function userCanCreate(req, res, next) {
+  res.status(200).send(chalk.greenBright('Authorized to create!'));
+}
+
+function userCanRead(req, res, next) {
+  res.status(200).send(chalk.greenBright('Authorized to read!'));
+}
+
+function handleOauth(req, res, next) {
+  let output = {
+    token: req.token,
+    user: req.user,
+  }
+  res.status(200).json(output);
+}
 
 module.exports = router;

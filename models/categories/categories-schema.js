@@ -8,6 +8,4 @@ const categories = mongoose.Schema({
   description: { type: String },
 });
 
-
-
 module.exports = mongoose.model('categories', categories);
