@@ -1,5 +1,6 @@
 'use strict';
 
+const chalk = require('chalk');
 const express = require('express');
 const cors = require('cors');
 
@@ -35,5 +36,5 @@ app.use(errorHandler);
 
 module.exports = {
   app,
-  start: (port) => app.listen(port, console.log('Connected to port', port))
+  start: (port) => app.listen(port, console.log(chalk.inverse.yellowBright('Connected to port'), port))
 }

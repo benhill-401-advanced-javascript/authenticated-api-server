@@ -3,7 +3,7 @@
 const mongoose = require('mongoose');
 require('mongoose-schema-jsonschema')(mongoose);
 
-const Todo = mongoose.Schema({
+const odo = mongoose.Schema({
   text: { type: String, required: true },
   assignee: { type: String },
   complete: { type: Boolean, default: false },
