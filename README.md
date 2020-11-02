@@ -33,3 +33,4 @@ REMOTE_API=https://api.github.com/user
 - mongoose
 - mongoose-schema-jsonschema
 - superagent
+- jest
